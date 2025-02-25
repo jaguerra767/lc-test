@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 fn main() {
     const PHIDGET_SN: i32 = 716692;
+    //const PHIDGET_SN: i32 = 716800;
     const COEFFICIENTS: [f64; 4] = [
         5286438.30017923,
         -5090856.07529369,
@@ -17,12 +18,14 @@ fn main() {
     let scale = Scale::new(PHIDGET_SN, 0.0, COEFFICIENTS).connect();
 
     loop {
-        let weight = scale.get_weight().unwrap();
+        let mut weights: Vec<f64> = (0..50).map(|_| scale.get_weight().unwrap()).collect();
+
+        let weight = median(weights.as_mut_slice());
 
         let client = Client::new();
         match send_request(&client, weight) {
             Ok(_) => {
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_secs(600));
             }
             Err(e) => {
                 eprint!("Error occured: {}", e);
@@ -49,4 +52,10 @@ fn send_request(client: &Client, weight: f64) -> Result<()> {
         .json(&payload)
         .send()?;
     Ok(())
+}
+
+fn median(range: &mut [f64]) -> f64 {
+    range.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let middle = range.len() / 2;
+    range[middle]
 }

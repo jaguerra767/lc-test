@@ -1,7 +1,7 @@
 use std::{thread, time::Duration};
 
 use anyhow::Result;
-use libra::scale::Scale;
+use libra::scale::{DisconnectedScale, TIMEOUT};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +15,9 @@ fn main() {
         -4916037.57602048,
     ];
 
-    let scale = Scale::new(PHIDGET_SN, 0.0, COEFFICIENTS).connect();
+    let scale = DisconnectedScale::new(PHIDGET_SN)
+        .connect(0.0, COEFFICIENTS, TIMEOUT)
+        .expect("Unable to connect to scale");
 
     loop {
         let mut weights: Vec<f64> = (0..50).map(|_| scale.get_weight().unwrap()).collect();
